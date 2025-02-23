@@ -68,6 +68,7 @@
         devShells.default = pkgs.mkShell {
           inputsFrom = builtins.attrValues packages;
           buildInputs = devPackages ++ [
+            pkgs.nodejs_latest
             # You can add packages from nixpkgs here
           ];
         };

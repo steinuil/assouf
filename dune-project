@@ -23,7 +23,7 @@
    (= 5.0.0-53))
   (odoc
    (and
-    :with-doc
+    (or :dev :with-doc)
     (>= 2.4.4)))))
 
 (package
@@ -35,6 +35,6 @@
    (= 5.0.0-53))
   (odoc
    (and
-    :with-doc
+    (or :dev :with-doc)
     (>= 2.4.4)))
   es0))

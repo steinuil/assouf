@@ -9,7 +9,7 @@ license: "ISC"
 depends: [
   "dune" {>= "3.8"}
   "melange" {= "5.0.0-53"}
-  "odoc" {with-doc & >= "2.4.4"}
+  "odoc" {(dev | with-doc) & >= "2.4.4"}
   "es0"
 ]
 build: [

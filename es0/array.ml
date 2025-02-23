@@ -12,6 +12,11 @@ external get : 'a t -> int -> 'a option = ""
 [@@mel.get_index] [@@mel.return undefined_to_opt]
 (** Gets an element from the array at the given [index]. *)
 
+external unsafe_get : 'a t -> int -> 'a = ""
+[@@mel.get_index]
+(** Gets an element from the array at the given [index] without bounds checking.
+*)
+
 external set : 'a t -> int -> 'a -> unit = ""
 [@@mel.set_index]
 (** Sets the item at [index] to [value]. *)

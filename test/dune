@@ -1,0 +1,14 @@
+(melange.emit
+ (alias runtest)
+ (target tests)
+ (module_systems es6)
+ (emit_stdlib false)
+ (libraries es)
+ (preprocess
+  (pps melange.ppx)))
+
+(rule
+ (alias runtest)
+ (deps ./tests/test/json_test.js)
+ (action
+  (run node %{deps})))

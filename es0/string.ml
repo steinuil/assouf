@@ -24,14 +24,14 @@ external get : t -> int -> char option = ""
 [@@mel.get_index] [@@mel.return undefined_to_opt]
 (** Returns the characters at the specified index. *)
 
-external at : index:int -> (t[@mel.this]) -> t = "at"
-[@@mel.send]
+external at : index:int -> (t[@mel.this]) -> t option = "at"
+[@@mel.send] [@@mel.return undefined_to_opt]
 (** Returns the character (exactly one UTF-16 code unit) at the specified
     [index]. Accepts negative integers, which count back from the last string
     character. *)
 
-external char_at : index:int -> (t[@mel.this]) -> t = "charAt"
-[@@mel.send]
+external char_at : index:int -> (t[@mel.this]) -> t option = "charAt"
+[@@mel.send] [@@mel.return undefined_to_opt]
 (** Returns the character (exactly one UTF-16 code unit) at the specified
     [index]. *)
 
@@ -39,8 +39,8 @@ external char_code_at : index:int -> (t[@mel.this]) -> int = "charCodeAt"
 [@@mel.send]
 (** Returns a number that is the UTF-16 code unit value at the given [index]. *)
 
-external code_point_at : pos:int -> (t[@mel.this]) -> int = "codePointAt"
-[@@mel.send]
+external code_point_at : pos:int -> (t[@mel.this]) -> int option = "codePointAt"
+[@@mel.send] [@@mel.return undefined_to_opt]
 (** Returns a nonnegative integer Number that is the code point value of the
     UTF-16 encoded code point starting at the specified [pos]. *)
 

@@ -65,6 +65,10 @@ external all : 'a t array -> 'a array t = "all"
     of the Promises resolve. If one of the Promises rejects, it rejects with
     that Promise's rejection value. *)
 
+external all2 : 'a t * 'b t -> ('a * 'b) t = "all"
+[@@mel.scope "Promise"]
+(** Like {!all}, but takes a heterogeneous tuple of promises. *)
+
 external all_settled : 'a t array -> 'a Promise_outcome.t array t = "allSettled"
 [@@mel.scope "Promise"]
 (** Takes an array of Promises as input. Returns a single Promise that resolves
