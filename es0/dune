@@ -1,0 +1,8 @@
+(library
+ (name es0)
+ (public_name es0)
+ (modes melange)
+ (libraries melange)
+ (flags -nopervasives)
+ (preprocess
+  (pps melange.ppx)))
