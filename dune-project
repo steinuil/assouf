@@ -1,6 +1,8 @@
 (lang dune 3.8)
 
-(name melange_es)
+(name es)
+
+(using melange 0.1)
 
 (version 0.1)
 
@@ -14,10 +16,25 @@
 
 (package
  (name es0)
- (synopsis "Zero-cost OCaml bindings to the ECMAScript APIs.")
- (description "Zero-cost OCaml bindings to the ECMAScript APIs.")
+ (synopsis "Zero-cost Melange bindings to the ECMAScript APIs.")
+ (description "Zero-cost Melange bindings to the ECMAScript APIs.")
  (depends
   (melange
    (= 5.0.0-53))
   (odoc
-   (>= 2.4.4))))
+   (and
+    :with-doc
+    (>= 2.4.4)))))
+
+(package
+ (name es)
+ (synopsis "Standard library to be used with Melange.")
+ (description "Standard library to be used with Melange.")
+ (depends
+  (melange
+   (= 5.0.0-53))
+  (odoc
+   (and
+    :with-doc
+    (>= 2.4.4)))
+  es0))
