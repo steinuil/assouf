@@ -1,5 +1,4 @@
 open Pervasives
-open Es0
 
 type unknown
 
@@ -16,7 +15,7 @@ let rec to_value (json : unknown) =
   | "string" -> String (Reflect.cast json)
   | "number" -> Number (Reflect.cast json)
   | "boolean" -> Boolean (Reflect.cast json)
-  | _ when Reflect.cast json == Null.empty -> Null
+  | _ when Reflect.is_null json -> Null
   | _ when Reflect.is_array json ->
       let values = Array.map ~f:to_value (Reflect.cast json) in
       Array values
@@ -33,46 +32,47 @@ module Decode = struct
     | Field of string * 'a error
     | Index of int * 'a error
     | One_of of 'a error array
+    | Expected of string * 'a
     | Failed of string * 'a
 
   let rec value_error = function
     | Field (str, err) -> Field (str, value_error err)
     | Index (index, err) -> Index (index, value_error err)
     | One_of errs -> One_of (Array.map ~f:value_error errs)
+    | Expected (str, json) -> Expected (str, to_value json)
     | Failed (str, json) -> Failed (str, to_value json)
 
   type 'a t = unknown -> ('a, unknown error) Result.t
 
-  let expected typ v = Error (Failed ("expected " ^ typ, v))
+  let expected typ v = Error (Expected (typ, v))
   let unknown : unknown t = fun v -> Ok v
   let value : value t = fun v -> Ok (to_value v)
 
   let bool : bool t =
    fun v ->
     if Reflect.typeof v == "boolean" then Ok (Reflect.cast v)
-    else expected "a boolean" v
+    else expected "boolean" v
 
   let null_with ~default : 'a t =
-   fun v ->
-    if Reflect.cast v == Null.empty then Ok default else expected "null" v
+   fun v -> if Reflect.is_null v then Ok default else expected "null" v
 
   let null : unit t = null_with ~default:()
 
   let float : float t =
    fun v ->
     if Reflect.typeof v == "number" then Ok (Reflect.cast v)
-    else expected "a float" v
+    else expected "float" v
 
   let int : int t =
    fun inp ->
     match float inp with
     | Ok v when Float.is_safe_integer v -> Ok (Float.unsafe_as_int v)
-    | Ok _ | Error _ -> expected "a valid integer" inp
+    | Ok _ | Error _ -> expected "integer" inp
 
   let string : string t =
    fun v ->
     if Reflect.typeof v == "string" then Ok (Reflect.cast v)
-    else expected "a string" v
+    else expected "string" v
 
   let option : 'a t -> 'a option t =
    fun f v ->
@@ -81,47 +81,6 @@ module Decode = struct
     | Error _ -> f v |> Result.map Option.some
 
   let satisfies ~err ~f v = if f v then Ok v else Error err
-
-  let map_ok ~f arr =
-    let out = [||] in
-    let rec loop i =
-      if Array.length arr == i then Ok out
-      else
-        match f (Array.unsafe_get arr i) with
-        | Ok v ->
-            Array.push ~value:v out |> ignore;
-            loop (i + 1)
-        | Error e -> Error (i, e)
-    in
-    loop 0
-
-  let mapi_ok ~f arr =
-    let out = [||] in
-    let rec loop i =
-      if Array.length arr == i then Ok out
-      else
-        match f (Array.unsafe_get arr i) i with
-        | Ok v ->
-            Array.push ~value:v out |> ignore;
-            loop (i + 1)
-        | Error _ as err -> err
-    in
-    loop 0
-
-  let map_dict_ok ~f dict =
-    let arr = Dict.entries dict in
-    let out = Dict.empty () in
-    let rec loop i =
-      if Array.length arr == i then Ok out
-      else
-        let k, v = Array.unsafe_get arr i in
-        match f k v with
-        | Ok v ->
-            Dict.(out.%[k] <- v) |> ignore;
-            loop (i + 1)
-        | Error _ as err -> err
-    in
-    loop 0
 
   let map : f:('a -> 'b) -> 'a t -> 'b t =
    fun ~f f1 inp -> match f1 inp with Ok v1 -> Ok (f v1) | Error e -> Error e
@@ -164,50 +123,37 @@ module Decode = struct
 
   let array : 'a t -> 'a array t =
    fun f inp ->
-    let& v =
-      satisfies ~f:Reflect.is_array inp ~err:(Failed ("expected an array", inp))
-    in
-    mapi_ok (Reflect.cast v) ~f:(fun v i ->
+    let& v = satisfies ~f:Reflect.is_array inp ~err:(Expected ("array", inp)) in
+    Array.mapi_ok (Reflect.cast v) ~f:(fun v i ->
         match f v with Ok v -> Ok v | Error e -> Error (Index (i, e)))
 
   let is_object v =
     Reflect.typeof v == "object"
-    && Reflect.cast v != Null.empty
+    && Reflect.cast v != Es0.Null.empty
     && not (Reflect.is_array v)
 
   let dict : 'a t -> 'a Dict.t t =
    fun f v ->
-    let& v = satisfies ~f:is_object v ~err:(Failed ("expected an object", v)) in
-    Reflect.cast v
-    |> map_dict_ok ~f:(fun key item ->
-           match f item with
-           | Ok item -> Ok item
-           | Error e -> Error (Field (key, e)))
+    let& v = satisfies ~f:is_object v ~err:(Expected ("object", v)) in
+    Dict.map_ok (Reflect.cast v) ~f:(fun key item ->
+        match f item with
+        | Ok item -> Ok item
+        | Error e -> Error (Field (key, e)))
 
   let lazy_ : (unit -> 'a t) -> 'a t = fun f inp -> f () inp
 
-  let map2 : f:('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t =
-   fun ~f f1 f2 ->
-    let* v1 = f1 in
-    let* v2 = f2 in
-    succeed (f v1 v2)
-
   let field key : 'a t -> 'a t =
    fun f inp ->
-    let& v =
-      satisfies ~f:is_object inp ~err:(Failed ("expected an object", inp))
-    in
-    let v = Object.cast v in
-    if Object.has_own ~key v then
-      let field = Object.get ~key v in
+    let& v = satisfies ~f:is_object inp ~err:(Expected ("object", inp)) in
+    let v = Reflect.cast v in
+    if Es0.Object.has_own ~key v then
+      let field = Es0.Object.get ~key v in
       match f field with Ok v -> Ok v | Error e -> Error (Field (key, e))
     else Error (Field (key, Failed ("field not found", inp)))
 
   let index i : 'a t -> 'a t =
    fun f inp ->
-    let& v =
-      satisfies ~f:Reflect.is_array inp ~err:(Failed ("expected an array", inp))
-    in
+    let& v = satisfies ~f:Reflect.is_array inp ~err:(Expected ("array", inp)) in
     let v = Reflect.cast v in
     if Array.length v < i then
       match f (Array.unsafe_get v i) with
@@ -219,7 +165,7 @@ module Decode = struct
    fun f inp -> match f inp with Ok v -> Ok (Some v) | Error _ -> Ok None
 end
 
-let parse str : unknown = Exn.wrap Json.parse str
+let parse str : unknown = Exn.wrap Es0.Json.parse str
 
 let parse_with ~(decoder : 'a Decode.t) str =
   let json = parse str in

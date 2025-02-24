@@ -1,86 +1,81 @@
 open Es
 open Node
 
-type test = { ayy : string; lmao : int }
-type recursive = { name : string; child : recursive option }
-
 let () =
   Test.describe "Json.parse" (fun () ->
       Test.it "should raise a Syntax exception" (fun () ->
           try Json.parse {| [{ |} |> ignore with Exn.Syntax _ -> ()))
 
+type recursive = { name : string; child : recursive option }
+
 let () =
   Test.describe "Json.Decode" (fun () ->
-      Test.it "should retrieve fields" (fun () ->
-          let decoder = Json.Decode.(array (optional (field "ayy" string))) in
-          let decoded =
-            Json.parse_with ~decoder
-              {json|
+      let open Json in
+      let test_decoder message ~decoder ~json ~expected =
+        Test.test message (fun () ->
+            let decoded = parse_with ~decoder json in
+            Assert.deep_strict_equal decoded expected)
+      in
+
+      test_decoder "'field' retrieves the correct field in the object"
+        ~decoder:Decode.(array (optional (field "name" string)))
+        ~json:
+          {json|
             [
-              {"ayy": "lmao"},
-              {"ayy": "tfw", "lmao": "gf"},
-              {"yo": "test"}
+              {"name": "Madoka"},
+              {"nick": "Homuhomu", "name": "Homura"},
+              {"monster": "Kyubei"}
             ]
           |json}
-          in
-          Assert.deep_strict_equal decoded
-            (Ok [| Some "lmao"; Some "tfw"; None |]));
+        ~expected:(Ok [| Some "Madoka"; Some "Homura"; None |]);
 
-      Test.it "should return an appropriate error" (fun () ->
-          let decoded =
-            Json.parse_with
-              ~decoder:Json.Decode.(array (field "ayy" string))
+      Test.describe
+        "returns errors indicating the path taken through the JSON object"
+        (fun () ->
+          test_decoder "Index and Field"
+            ~decoder:Decode.(array (field "name" string))
+            ~json:
               {json|
                 [
-                  {"ayy": "lmao"},
-                  {"ayy": "tfw", "lmao": "gf"},
-                  {"yo": "test"}
+                  {"name": "Madoka"},
+                  {"name": 3},
+                  {"name": "Mami", "mamis": true}
                 ]
               |json}
-          in
-          let error =
-            let open Json.Decode in
-            let dict =
-              Json.Object (Es0.Dict.of_array [| ("yo", Json.String "test") |])
-            in
-            Index (2, Field ("ayy", Failed ("field not found", dict)))
-          in
-          Assert.deep_strict_equal decoded (Error error));
+            ~expected:
+              (let open Decode in
+               Error
+                 (Index (1, Field ("name", Expected ("string", Number 3.0)))));
 
-      Test.it "should map things to the thing" (fun () ->
-          let decoder =
-            let open Json.Decode in
-            array
-              (map2
-                 ~f:(fun ayy lmao -> { ayy; lmao })
-                 (field "ayy" string) (field "lmao" int))
-          in
-          let decoded =
-            Json.parse_with ~decoder
-              {|
-               [
-                 {"ayy": "test", "lmao": 22},
-                 {"ayy": "Madoka", "lmao": 4123}
-               ] 
-              |}
-          in
-          Assert.deep_strict_equal decoded
-            (Ok
-               [|
-                 { ayy = "test"; lmao = 22 }; { ayy = "Madoka"; lmao = 4123 };
-               |]));
+          test_decoder "field not found"
+            ~decoder:Decode.(array (field "age" int))
+            ~json:
+              {json|
+                [
+                  {"age": 3},
+                  {"name": "Kazumi"},
+                  {"age": 49}
+                ]
+              |json}
+            ~expected:
+              (let open Decode in
+               let dict =
+                 Object (Dict.of_array [| ("name", String "Kazumi") |])
+               in
+               Error
+                 (Index (1, Field ("age", Failed ("field not found", dict))))));
 
-      Test.it "should be able to deal with recursive data structures" (fun () ->
-          let rec decoder () =
-            Json.Decode.(
-              map2
-                ~f:(fun name child -> { name; child })
-                (field "name" string)
-                (field "child" (option (lazy_ decoder))))
-          in
-          let decoded =
-            Json.parse_with ~decoder:(decoder ())
-              {|
+      test_decoder "it should deal with recursive data structures"
+        ~decoder:
+          (let rec decoder () =
+             let open Decode in
+             let* name = field "name" string in
+             let* child = field "child" (option (lazy_ decoder)) in
+             succeed { name; child }
+           in
+           decoder ())
+        ~json:
+          {json|
             {
               "name": "Bjorn",
               "child": {
@@ -88,11 +83,10 @@ let () =
                 "child": null
               }
             }
-        |}
-          in
-          Assert.deep_strict_equal decoded
-            (Ok
-               {
-                 name = "Bjorn";
-                 child = Some { name = "Bjornsson"; child = None };
-               })))
+          |json}
+        ~expected:
+          (Ok
+             {
+               name = "Bjorn";
+               child = Some { name = "Bjornsson"; child = None };
+             }))

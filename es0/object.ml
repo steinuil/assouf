@@ -15,6 +15,10 @@ external get : t -> key:string -> _ = ""
 [@@mel.get_index]
 (** Get a property of an [Object]. *)
 
+external get_symbol : t -> key:Symbol.t -> _ = ""
+[@@mel.get_index]
+(** Get a symbol property of an [Object]. *)
+
 external has_own : t -> key:string -> bool = "hasOwn"
 [@@mel.scope "Object"]
 (** Returns [true] if the specified object has the indicated property. *)
