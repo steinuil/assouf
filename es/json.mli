@@ -1,31 +1,44 @@
-type unknown
-(** An opaque object containing a parsed JSON value. *)
+(** Parse and serialize JSON. *)
 
-val parse : string -> unknown
-(** Parse a JSON string into an opaque value.
+module Unknown : sig
+  (** Unsafe JSON functions. *)
 
-    @raise Exn.Syntax *)
+  type t
+  (** An opaque object containing a parsed JSON value. *)
 
-val stringify : ?space:int -> unknown -> string
-(** Serialize an opaque JSON object to a JSON string, optionally indenting it by
-    [space] spaces. *)
+  val parse : string -> t
+  (** Parse a JSON string into an opaque value.
 
-(** A value that can be represented into JSON. *)
-type value =
+      @raise Exn.Syntax *)
+
+  val stringify : ?space:int -> t -> string
+  (** Serialize an opaque JSON object to a JSON string, optionally indenting it
+      by [space] spaces. *)
+end
+
+(** A value that can be represented in JSON. *)
+type t =
   | Null
   | Boolean of bool
   | Number of float
   | String of string
-  | Array of value array
-  | Object of value Dict.t
+  | Array of t array
+  | Object of t Dict.t
 
-val to_value : unknown -> value
-(** Parse an opaque JSON object into a {!value}. *)
+val of_unknown : Unknown.t -> t
+(** Parse an opaque JSON object into a {!t}.
 
-val of_value : value -> unknown
-(** Convert a {!value} into an opaque JSON object. *)
+    @raise Exn.Type if the object does not conform to the JSON structure. *)
 
-val parse_value : string -> value
-(** Parse a JSON string into a {!value}.
+val to_unknown : t -> Unknown.t
+(** Convert a {!t} into an opaque JSON object. *)
+
+val of_string : string -> t
+(** Parse a JSON string into a {!t}.
+
+    Use the {!Decode} module to decode JSON into OCaml values.
 
     @raise Exn.Syntax *)
+
+val to_string : ?space:int -> t -> string
+(** Serialize a JSON value into a JSON string. *)

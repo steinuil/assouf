@@ -12,20 +12,20 @@ let rec value_error = function
   | Field (str, err) -> Field (str, value_error err)
   | Index (index, err) -> Index (index, value_error err)
   | One_of errs -> One_of (Array.map ~f:value_error errs)
-  | Expected (str, json) -> Expected (str, to_value json)
-  | Failed (str, json) -> Failed (str, to_value json)
+  | Expected (str, json) -> Expected (str, of_unknown json)
+  | Failed (str, json) -> Failed (str, of_unknown json)
 
-type 'a t = unknown -> ('a, unknown error) Result.t
+type 'a t = Unknown.t -> ('a, Unknown.t error) Result.t
 
 let expect typ v = Error (Expected (typ, v))
-let unknown : unknown t = fun v -> Ok v
-let value : value t = fun v -> Ok (to_value v)
+let unknown : Unknown.t t = fun v -> Ok v
+let value : Json.t t = fun v -> Ok (of_unknown v)
 
 let bool v =
   if Reflect.typeof v == `boolean then Ok (Reflect.cast v)
   else expect "boolean" v
 
-let null ~default (v : unknown) =
+let null ~default (v : Unknown.t) =
   if Reflect.is_null v then Ok default else expect "null" v
 
 let float v =
@@ -141,5 +141,5 @@ let index i f inp =
 let optional f inp = match f inp with Ok v -> Ok (Some v) | Error _ -> Ok None
 
 let parse ~decoder str =
-  let json = parse str in
+  let json = Unknown.parse str in
   match decoder json with Ok v -> Ok v | Error err -> Error (value_error err)

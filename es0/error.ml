@@ -1,4 +1,4 @@
-(** The base JavaScript exception [Error]. *)
+(** JavaScript exceptions. *)
 
 type t = Caml_js_exceptions.t
 (** A JavaScript [Error] object. *)

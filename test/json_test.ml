@@ -7,9 +7,9 @@ type node = { id : int; state : string }
 type interface = Client of client | Node of node
 
 let tests =
-  Test.describe "Json.parse" (fun () ->
+  Test.describe "Json.Unknown.parse" (fun () ->
       Test.it "should raise a Syntax exception" (fun () ->
-          try Json.parse {| [{ |} |> ignore with Exn.Syntax _ -> ()));
+          try Json.Unknown.parse {| [{ |} |> ignore with Exn.Syntax _ -> ()));
 
   Test.describe "Json.Decode" (fun () ->
       let open Json in

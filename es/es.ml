@@ -74,5 +74,6 @@ module Json = struct
   include Json
   (** @inline *)
 
+  module Encode = Json_encode
   module Decode = Json_decode
 end

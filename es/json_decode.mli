@@ -1,11 +1,15 @@
 open Json
 
-(** Decoders for safely decoding JSON into OCaml values.
+(** Safely decode JSON into OCaml values.
 
     Monadic parser combinators for parsing JSON into OCaml values, inspired by
     Elm's
     {{:https://package.elm-lang.org/packages/elm/json/latest/Json-Decode}
-     Json.Decode} module. *)
+     Json.Decode} module.
+
+    These decoders act directly on JavaScript objects, so you can use them to
+    safely parse any plain JavaScript object that conforms to the JSON structure
+    into typed values. *)
 
 (** {1 Types} *)
 
@@ -22,25 +26,38 @@ type 'a error =
       (** Tried several decoders with {!or_} or {!one_of} but they all failed.
       *)
 
-val value_error : unknown error -> value error
+val value_error : Unknown.t error -> Json.t error
 (** Turn an error that occurred while decoding an opaque JSON value into an
-    inspectable {!type-value}. *)
+    inspectable {!Json.t}. *)
 
-type 'a t = unknown -> ('a, unknown error) Stdlib.Result.t
-(** A decoder for a JSON value. *)
+type 'a t = Unknown.t -> ('a, Unknown.t error) Stdlib.Result.t
+(** A JSON decoder. *)
 
-(** {1 Parse JSON} *)
+(** {1 Parsing} *)
 
-val parse : decoder:'a t -> string -> ('a, value error) Stdlib.Result.t
-(** Parse a JSON string and decode it using a decoder. *)
+val parse : decoder:'a t -> string -> ('a, Json.t error) Stdlib.Result.t
+(** Parse a JSON string and decode it using a decoder.
+
+    @raise Exn.Syntax *)
+
+(** You can also call these decoders directly on any JavaScript object:
+
+    {[
+      bool (Reflect.cast true) == Ok true
+    ]}
+
+    If you're feeling adventurous you can write your own decoders for arbitrary
+    JS objects and use these combinators to parse unknown object structures.
+    This may be a better option than just casting when dealing with external
+    libraries that return objects with inconsistent structure. *)
 
 (** {1 Basic decoders} *)
 
-val unknown : unknown t
+val unknown : Unknown.t t
 (** Just return the unparsed opaque JSON value. *)
 
-val value : value t
-(** Parse the opaque JSON value into a {!type-value} and return it. *)
+val value : Json.t t
+(** Parse the opaque JSON value into a {!Json.t} and return it. *)
 
 val bool : bool t
 (** Decode a [bool]. *)
@@ -65,7 +82,7 @@ val array : 'a t -> 'a array t
 
 val dict : 'a t -> 'a Dict.t t
 (** Decode a JSON object running a decoder on every value, and return it as a
-    {!Dict}. *)
+    {!Dict}. See {!( let* )} and {!field} for parsing arbitrary objects. *)
 
 (** {1 Monadic operators} *)
 
@@ -164,12 +181,11 @@ val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
           field "info" (field "props" (field "application.name" string))
         in
         return { id; application_name }
-      in
+
       let node : node t =
         let* id = field "id" int
         and* state = field "info" (field "state" string) in
         return { id; state }
-      in
 
       let interface : interface t =
         let* type_ = field "type" string in

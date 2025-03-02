@@ -1,11 +1,15 @@
-include Es0.Error
-(** @inline *)
+(** Exceptions. *)
+
+module Js = struct
+  include Es0.Error
+  (** @inline *)
+
+  exception Error = Caml_js_exceptions.Error
+  (** An exception raised by JavaScript code. *)
+end
 
 open Pervasives
 open Es0
-
-exception Js_error = Caml_js_exceptions.Error
-(** An exception raised by JavaScript code. *)
 
 exception Error of string
 (** The base JavaScript Error. *)
@@ -34,11 +38,11 @@ exception Uri of string
 exception Aggregate of string * exn array
 (** Error returned by [Promise.any] when all promises passed to it reject. *)
 
-exception Unknown of t
+exception Unknown of Js.t
 (** A non-standard JavaScript error. *)
 
 (** Turn a JS error into an OCaml exception. *)
-let rec of_error e =
+let rec of_error (e : Js.t) =
   let message = Error.message e in
   match Error.name e with
   | "Error" -> Error message
