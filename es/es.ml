@@ -69,4 +69,10 @@ module Reg_exp_match = Es0.Reg_exp_match
 module Date = Es0.Date
 module Temporal = Es0.Temporal
 module Uri = Es0.Uri
-module Json = Json
+
+module Json = struct
+  include Json
+  (** @inline *)
+
+  module Decode = Json_decode
+end
