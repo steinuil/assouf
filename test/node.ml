@@ -2,10 +2,16 @@ module Test = struct
   external test : string -> (unit -> unit) -> unit = "test"
   [@@mel.module "node:test"]
 
+  external async_test : string -> (unit -> unit Es.Promise.t) -> unit = "test"
+  [@@mel.module "node:test"]
+
   external describe : string -> (unit -> unit) -> unit = "describe"
   [@@mel.module "node:test"]
 
   external it : string -> (unit -> unit) -> unit = "it"
+  [@@mel.module "node:test"]
+
+  external async_it : string -> (unit -> unit Es.Promise.t) -> unit = "test"
   [@@mel.module "node:test"]
 end
 

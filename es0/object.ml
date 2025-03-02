@@ -26,3 +26,7 @@ external has_own : t -> key:string -> bool = "hasOwn"
 external global_this : 'a = "globalThis"
 (** The [globalThis] property containing the global [this] value, which is
     usually akin to the global object. *)
+
+external prototype : t -> t = "__proto__"
+[@@mel.get]
+(** Get the prototype of an [Object]. *)

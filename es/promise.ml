@@ -1,11 +1,14 @@
+include Es0.Promise
+(** @inline *)
+
 open Es0
 
-type 'a t = 'a Promise.t
+(* type 'a t = 'a Promise.t *)
 
 (** {1 Constructors} *)
 
-let resolve = Promise.resolve
-let reject = Promise.reject
+(* let resolve = Promise.resolve *)
+(* let reject = Promise.reject *)
 
 (** {1 Callbacks} *)
 
@@ -26,9 +29,9 @@ let[@inline] map = Promise.then_map
 let all = Promise.all
 let any = Promise.any
 
-module Infix = struct
-  let[@inline] ( let+ ) p f = Promise.then_map ~f p
-  let[@inline] ( and+ ) p1 p2 = Promise.all2 (p1, p2)
-  let[@inline] ( let* ) p f = Promise.then_ ~f p
+module Syntax = struct
+  external ( let* ) : ('a t[@mel.this]) -> ('a -> 'b t) -> 'b t = "then"
+  [@@mel.send]
+
   let[@inline] ( and* ) p1 p2 = Promise.all2 (p1, p2)
 end

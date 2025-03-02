@@ -1,19 +1,18 @@
 open Es
 open Node
 
-let () =
-  Test.describe "Json.parse" (fun () ->
-      Test.it "should raise a Syntax exception" (fun () ->
-          try Json.parse {| [{ |} |> ignore with Exn.Syntax _ -> ()))
-
 type recursive = { name : string; child : recursive option }
 
-let () =
+let tests =
+  Test.describe "Json.parse" (fun () ->
+      Test.it "should raise a Syntax exception" (fun () ->
+          try Json.parse {| [{ |} |> ignore with Exn.Syntax _ -> ()));
+
   Test.describe "Json.Decode" (fun () ->
       let open Json in
       let test_decoder message ~decoder ~json ~expected =
         Test.test message (fun () ->
-            let decoded = parse_with ~decoder json in
+            let decoded = Decode.parse_with ~decoder json in
             Assert.deep_strict_equal decoded expected)
       in
 
@@ -69,9 +68,9 @@ let () =
         ~decoder:
           (let rec decoder () =
              let open Decode in
-             let* name = field "name" string in
-             let* child = field "child" (option (lazy_ decoder)) in
-             succeed { name; child }
+             let* name = field "name" string
+             and* child = field "child" (option (lazy_ decoder)) in
+             return { name; child }
            in
            decoder ())
         ~json:

@@ -1,7 +1,7 @@
-open Pervasives
-
 include Es0.Array
 (** @inline *)
+
+open Pervasives
 
 (** Short-circuiting fold over [Result]s. Returns [Ok acc] if all the folded
     values are [Ok], otherwise exits early at the first [Error]. *)

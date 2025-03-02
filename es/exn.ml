@@ -1,8 +1,8 @@
+include Es0.Error
+(** @inline *)
+
 open Pervasives
 open Es0
-
-include Error
-(** @inline *)
 
 exception Js_error = Caml_js_exceptions.Error
 (** An exception raised by JavaScript code. *)
@@ -53,6 +53,7 @@ let rec of_error e =
       Aggregate (message, errors)
   | _ -> Unknown e
 
-(** Wrap exception raised by a JS function into OCaml exceptions. *)
+(** Wrap a function that may raise a JS exception and transform any JS
+    exceptions it raises into native OCaml exceptions. *)
 let wrap fn arg =
   try fn arg with Caml_js_exceptions.Error e -> raise (of_error e)

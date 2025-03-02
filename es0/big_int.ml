@@ -1,6 +1,7 @@
 (** Arbitrary-precision unsigned integers. *)
 
 type t
+(** A JavaScript [BigInt]. *)
 
 external of_int : int -> t = "BigInt"
 (** Creates a BigInt from an int. *)

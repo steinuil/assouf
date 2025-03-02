@@ -9,6 +9,6 @@
 
 (rule
  (alias runtest)
- (deps ./tests/test/json_test.js)
+ (deps ./tests/test/tests.js)
  (action
   (run node %{deps})))

@@ -1,7 +1,7 @@
-open Pervasives
-
 include Es0.Dict
 (** @inline *)
+
+open Pervasives
 
 let fold_ok ~f ~init dict =
   entries dict

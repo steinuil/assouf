@@ -1,4 +1,13 @@
-external typeof : _ -> string = "#typeof"
+external typeof :
+  _ ->
+  [ `undefined
+  | `boolean
+  | `number
+  | `bigint
+  | `string
+  | `symbol
+  | `\#function
+  | `\#object ] = "#typeof"
 (** The JavaScript [typeof] operator. Returns a string description of the
     primitive type of the object. *)
 
