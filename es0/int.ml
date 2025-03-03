@@ -1,12 +1,13 @@
 (** Safe integer operations for working with JS integer [Number]s. *)
 
 type t = int
+(** A JavaScript [Number] type that is representable as an integer. *)
 
-external max_safe_integer : t = "MAX_SAFE_INTEGER"
+external max_value : t = "MAX_SAFE_INTEGER"
 [@@mel.scope "Number"]
 (** The maximum safe integer in JavaScript (2{^ 53} - 1). *)
 
-external min_safe_integer : t = "MIN_SAFE_INTEGER"
+external min_value : t = "MIN_SAFE_INTEGER"
 [@@mel.scope "Number"]
 (** The minimum safe integer in JavaScript (-(2{^ 53} - 1)). *)
 

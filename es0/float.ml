@@ -2,6 +2,7 @@
 *)
 
 type t = float
+(** The JavaScript [Number] type. *)
 
 (** {1 Constants} *)
 

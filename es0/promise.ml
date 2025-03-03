@@ -10,7 +10,32 @@ external make :
 (** Create a Promise that will be resolved or rejected when its [resolve] or
     [reject] parameters are called. *)
 
-(* TODO external with_resolvers : unit -> *)
+type ('a, 'err) resolvers = {
+  promise : 'a t;
+  resolve : 'a -> unit;
+  reject : 'err -> unit;
+}
+(** The return value of {!with_resolvers}. *)
+
+external with_resolvers : unit -> ('a, 'err) resolvers = "withResolvers"
+[@@mel.scope "Promise"]
+(** Create a new Promise and return its [resolve] and [reject] parameters,
+    allowing you to resolve it elsewhere in the code.
+
+    It is a convenience alias for this code:
+
+    {[
+      let resolve = ref (fun _ -> ())
+      let reject = ref (fun _ -> ())
+
+      let promise =
+        Promise.make (fun ~resolve:res ~reject:rej ->
+            resolve := res;
+            reject := res)
+
+      let resolve = !resolve
+      let reject = !reject
+    ]} *)
 
 external resolve : 'a -> 'a t = "resolve"
 [@@mel.scope "Promise"]

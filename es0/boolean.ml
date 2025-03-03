@@ -1,6 +1,9 @@
 (** Operations on booleans. *)
 
 type t = bool
+(** The JavaScript
+    {{:https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean}
+     [Boolean]} type. *)
 
 external of_int : int -> t = "Boolean"
 (** [of_int i] is the same as [i <> 0]. *)
